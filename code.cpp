@@ -67,8 +67,13 @@ std::vector<float> ReclastPos;
 
 // Dragging state
 int draggingIndex = -1;
+int left_Resize_Index = -1;
+int Right_Resize_Index = -1;
+
 float dragOffsetX = 0;
 float dragOffsetY = 0;
+
+float Rect_resize_mStartPosX = 0;
 
 
 // Forward declarations
@@ -182,14 +187,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         int mx = LOWORD(lParam);
         int my = HIWORD(lParam);
 
+        draggingIndex = -1;
+        left_Resize_Index = -1;
+        Right_Resize_Index = -1;
+
+        // Loop top-most first
         for (int i = rectangles.size() - 1; i >= 0; --i)
         {
-            if (rectangles[i].contains(mx, my))
+            if (!rectangles[i].contains(mx, my))
+                continue;
+
+            // Left resize
+            if (mx - rectangles[i].left < 15)
+            {
+                left_Resize_Index = i;
+                Rect_resize_mStartPosX = mx;
+                SetCapture(hWnd);
+                break;
+            }
+            // Right resize
+            else if (rectangles[i].right - mx < 15)
+            {
+                Right_Resize_Index = i;
+                Rect_resize_mStartPosX = mx;
+                SetCapture(hWnd);
+                break;
+            }
+            // Dragging
+            else
             {
                 draggingIndex = i;
                 dragOffsetX = mx - rectangles[i].left;
                 dragOffsetY = my - rectangles[i].top;
 
+                // Save last position for snap-back
                 ReclastPos.clear();
                 ReclastPos.push_back(rectangles[i].left);
                 ReclastPos.push_back(rectangles[i].top);
@@ -205,10 +236,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
     {
-        if (draggingIndex != -1)
+        int mx = LOWORD(lParam);
+        int my = HIWORD(lParam);
+
+        // Left resize
+        if (left_Resize_Index != -1)
         {
-            int mx = LOWORD(lParam);
-            int my = HIWORD(lParam);
+            float dx = mx - Rect_resize_mStartPosX;
+            rectangles[left_Resize_Index].left += dx;
+            Rect_resize_mStartPosX = mx; // update start for next move
+            InvalidateRect(hWnd, nullptr, FALSE);
+        }
+        // Right resize
+        else if (Right_Resize_Index != -1 )
+        {
+            float dx = mx - Rect_resize_mStartPosX;
+            rectangles[Right_Resize_Index].right += dx; // ADD dx, not subtract
+            Rect_resize_mStartPosX = mx;
+            InvalidateRect(hWnd, nullptr, FALSE);
+        }
+
+        else if (draggingIndex != -1)
+        {
 
             float dx = mx - dragOffsetX - rectangles[draggingIndex].left;
             float dy = my - dragOffsetY - rectangles[draggingIndex].top;
@@ -243,6 +292,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_LBUTTONUP:
     {
+        left_Resize_Index = -1;
+        Right_Resize_Index = -1;
+
         if (draggingIndex != -1)
         {
             int mx = LOWORD(lParam);
@@ -266,10 +318,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
 
-            draggingIndex = -1;
-            ReleaseCapture();
-            InvalidateRect(hWnd, nullptr, FALSE);
+
         }
+        draggingIndex = -1;
+        ReleaseCapture();
+        InvalidateRect(hWnd, nullptr, FALSE);
     }
     break;
 
