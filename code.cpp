@@ -24,6 +24,35 @@ ID2D1SolidColorBrush* pBrush = nullptr;
 
 
 
+struct uiRect
+{
+    float left, top, right, bottom;   // Direct2D style
+    D2D1_COLOR_F color;
+
+    // Helper to get D2D rectangle (Direct2D wants left, top, right, bottom)
+    D2D1_RECT_F getRectF() const
+    {
+        return D2D1::RectF(left, top, right, bottom);
+    }
+
+    // Check if point is inside
+    bool contains(float px, float py) const
+    {
+        return px >= left && px <= right &&
+            py >= top && py <= bottom;
+    }
+
+    // Width & height helper
+    float width() const { return right - left; }
+    float height() const { return bottom - top; }
+
+    // Move rectangle by dx, dy
+    void move(float dx, float dy)
+    {
+        left += dx; right += dx;
+        top += dy; bottom += dy;
+    }
+};
 
 
 
@@ -59,8 +88,13 @@ struct MyRect
 
 
 
+std::vector<uiRect> UI_rectangles;
+
+
 // In your globals
 std::vector<MyRect> rectangles;
+
+
 
 std::vector<float> ReclastPos;
 
@@ -177,19 +211,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         );
 
 
+
         // --- Initialize rectangles here ---
+        UI_rectangles.push_back({ 0, 0, 1920, 1080, D2D1::ColorF(0.278f, 0.224f, 0.278f) }); // main background color
+
+        UI_rectangles.push_back({ 450, 75, 1600, 1000, D2D1::ColorF(0.314f, 0.263f, 0.314f) }); //Preview+Timeline background color
+
+
+
+        UI_rectangles.push_back({ 20, 15, 70, 65, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Top Icon
+        UI_rectangles.push_back({ 20, 115, 70, 165, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); //Left vertical Icons
+        UI_rectangles.push_back({ 20, 215, 70, 265, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); //Left vertical Icons
+
+
+
+
+
+        UI_rectangles.push_back({ 132, 100, 347, 150, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Import Media icon
+
+        UI_rectangles.push_back({ 132, 175, 207, 225, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Left Sort media
+        UI_rectangles.push_back({ 247, 175, 322, 225, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Right sort media
+
+
+        UI_rectangles.push_back({ 132, 250, 232, 350, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media first Row
+        UI_rectangles.push_back({ 247, 250, 347, 350, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media first Row
+
+        UI_rectangles.push_back({ 132, 400, 232, 500, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media second Row
+        UI_rectangles.push_back({ 247, 400, 347, 500, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media second Row
+
+
+
+
         rectangles.push_back({ 800, 100, 1000, 300, D2D1::ColorF(D2D1::ColorF::Red) });
         rectangles.push_back({ 100, 100, 300, 300, D2D1::ColorF(D2D1::ColorF::DeepSkyBlue) });
+
     }
     break;
     case WM_LBUTTONDOWN:
     {
         int mx = LOWORD(lParam);
         int my = HIWORD(lParam);
-
-        draggingIndex = -1;
-        left_Resize_Index = -1;
-        Right_Resize_Index = -1;
 
         // Loop top-most first
         for (int i = rectangles.size() - 1; i >= 0; --i)
@@ -248,7 +309,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             InvalidateRect(hWnd, nullptr, FALSE);
         }
         // Right resize
-        else if (Right_Resize_Index != -1 )
+        else if (Right_Resize_Index != -1)
         {
             float dx = mx - Rect_resize_mStartPosX;
             rectangles[Right_Resize_Index].right += dx; // ADD dx, not subtract
@@ -270,7 +331,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 if (i == draggingIndex) continue;
 
-                if (std::abs(rectangles[draggingIndex].left - rectangles[i].right) < 25.0f)
+                if (std::abs(rectangles[draggingIndex].left - rectangles[i].right) < 25.0f &&
+                    std::abs(rectangles[draggingIndex].top - rectangles[i].top) < 100.0f)
                 {
                     // Snap left edge to other's right edge
                     float w = rectangles[draggingIndex].width();
@@ -309,6 +371,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Snap back to last position if dropped on top of another
                     if (ReclastPos.size() >= 4)
                     {
+
+
                         rectangles[draggingIndex].left = ReclastPos[0];
                         rectangles[draggingIndex].top = ReclastPos[1];
                         rectangles[draggingIndex].right = ReclastPos[2];
@@ -318,11 +382,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
 
-
+            draggingIndex = -1;
+            ReleaseCapture();
+            InvalidateRect(hWnd, nullptr, FALSE);
         }
-        draggingIndex = -1;
-        ReleaseCapture();
-        InvalidateRect(hWnd, nullptr, FALSE);
+
     }
     break;
 
@@ -370,12 +434,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
 
+        for (auto& r : UI_rectangles)
+        {
+            pBrush->SetColor(r.color);
+            pRenderTarget->FillRectangle(r.getRectF(), pBrush);
+        }
 
         for (auto& r : rectangles)
         {
             pBrush->SetColor(r.color);
             pRenderTarget->FillRectangle(r.getRectF(), pBrush);
         }
+
+
 
         pRenderTarget->EndDraw();
         EndPaint(hWnd, &ps);
@@ -389,7 +460,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             RECT rc;
             GetClientRect(hWnd, &rc);
 
-            D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top); 
+            D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
             pRenderTarget->Resize(size);
         }
     }
