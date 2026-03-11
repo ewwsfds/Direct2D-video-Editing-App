@@ -263,7 +263,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 
         // *** DIRECT2D ADDED: Initialize Direct2D when window is created ***
-    case WM_CREATE:
+        case WM_CREATE:
     {
         D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory);
 
@@ -343,7 +343,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         for (auto& r : rectangles)
         {
             pBrush->SetColor(r.color);
-            pRenderTarget->FillRectangle(r.getRectF(), pBrush);
+            pRenderTarget->DrawBitmap(g_myImage, r.getRectF());
+
         }
 
         // your code bitmap Image
