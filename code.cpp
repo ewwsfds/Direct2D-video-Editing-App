@@ -8,6 +8,8 @@
 #pragma comment(lib, "d2d1.lib")  // *** DIRECT2D ADDED ***
 #define MAX_LOADSTRING 100
 #include <vector>
+#include <string>
+
 
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
@@ -26,31 +28,29 @@ ID2D1SolidColorBrush* pBrush = nullptr;
 
 struct uiRect
 {
-    float left, top, right, bottom;   // Direct2D style
+    std::string name;   // <-- ADD THIS
+
+    float left, top, right, bottom;
     D2D1_COLOR_F color;
 
-    // Helper to get D2D rectangle (Direct2D wants left, top, right, bottom)
     D2D1_RECT_F getRectF() const
     {
         return D2D1::RectF(left, top, right, bottom);
     }
 
-    // Check if point is inside
     bool contains(float px, float py) const
     {
         return px >= left && px <= right &&
             py >= top && py <= bottom;
     }
 
-    // Width & height helper
-    float width() const { return right - left; }
+    float width()  const { return right - left; }
     float height() const { return bottom - top; }
 
-    // Move rectangle by dx, dy
     void move(float dx, float dy)
     {
         left += dx; right += dx;
-        top += dy; bottom += dy;
+        top += dy;  bottom += dy;
     }
 };
 
@@ -213,38 +213,74 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
         // --- Initialize rectangles here ---
-        UI_rectangles.push_back({ 0, 0, 1920, 1080, D2D1::ColorF(0.278f, 0.224f, 0.278f) }); // main background color
-
-        UI_rectangles.push_back({ 450, 75, 1600, 1000, D2D1::ColorF(0.314f, 0.263f, 0.314f) }); //Preview+Timeline background color
-
-
-
-        UI_rectangles.push_back({ 20, 15, 70, 65, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Top Icon
-        UI_rectangles.push_back({ 20, 115, 70, 165, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); //Left vertical Icons
-        UI_rectangles.push_back({ 20, 215, 70, 265, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); //Left vertical Icons
+        rectangles.push_back({ 800, 100, 1000, 175, D2D1::ColorF(D2D1::ColorF::Red) });
+        rectangles.push_back({ 100, 100, 300, 175, D2D1::ColorF(D2D1::ColorF::DeepSkyBlue) });
 
 
 
 
+        // --- UI rectangles ---//
 
-        UI_rectangles.push_back({ 132, 100, 347, 150, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Import Media icon
+// ===== MAIN =====
+        UI_rectangles.push_back({ "Main background", 0,0 - 40,1920,1080 - 40, D2D1::ColorF(0x3F2F49) });
 
-        UI_rectangles.push_back({ 132, 175, 207, 225, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Left Sort media
-        UI_rectangles.push_back({ 247, 175, 322, 225, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Right sort media
+        // ===== LEFT NAV =====
+        UI_rectangles.push_back({ "Nav Icon", 15,10,65,60, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Left icon 1", 15,110,65,160, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Left icon 2", 15,210,65,260, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Left icon 3", 15,310,65,360, D2D1::ColorF(D2D1::ColorF::White) });
+
+        // ===== MEDIA =====
+        UI_rectangles.push_back({ "Import media", 102,110,317,185, D2D1::ColorF(0x8A2FFF) });
+
+        UI_rectangles.push_back({ "Left media sort", 102,200,177,225, D2D1::ColorF(0x7635C1) });
+        UI_rectangles.push_back({ "Right media sort", 218,200,293,225, D2D1::ColorF(0x7635C1) });
+
+        UI_rectangles.push_back({ "Left media video Placeholder row 1", 102,250,202,350, D2D1::ColorF(0x2F2433) });
+        UI_rectangles.push_back({ "Right media video Placeholder row 1", 218,250,318,350, D2D1::ColorF(0x2F2433) });
+
+        UI_rectangles.push_back({ "Left media video Placeholder row 2", 102,400,202,500, D2D1::ColorF(0x2F2433) });
+        UI_rectangles.push_back({ "Right media video Placeholder row 2", 218,400,318,500, D2D1::ColorF(0x2F2433) });
+
+        UI_rectangles.push_back({ "Left media video Placeholder row 3", 102,550,202,650, D2D1::ColorF(0x2F2433) });
+        UI_rectangles.push_back({ "Right media video Placeholder row 3", 218,550,318,650, D2D1::ColorF(0x2F2433) });
+
+        // ===== PREVIEW + TIMELINE =====
+        UI_rectangles.push_back({ "Preview + Timeline background", 345,90,1595,1040, D2D1::ColorF(0x483B51) });
+        UI_rectangles.push_back({ "PreviewPanel", 553,100,1386,565, D2D1::ColorF(D2D1::ColorF::Black) });
+
+        // Preview buttons left
+        UI_rectangles.push_back({ "Go back button", 360,582,395,617, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Go Forward button", 426,582,461,617, D2D1::ColorF(D2D1::ColorF::White) });
+
+        // Preview buttons middle
+        UI_rectangles.push_back({ "Play button", 872,582,907,617, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Current Time", 931,582,966,617, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Total Time", 990,582,1025,617, D2D1::ColorF(D2D1::ColorF::White) });
+
+        // Preview buttons right
+        UI_rectangles.push_back({ "Zoom In", 1460,582,1495,617, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Zoom Out", 1530,582,1565,617, D2D1::ColorF(D2D1::ColorF::White) });
+
+        // ===== TIMELINE =====
+        UI_rectangles.push_back({ "TimelineBar", 360,637,1573,662, D2D1::ColorF(D2D1::ColorF::Red) });
 
 
-        UI_rectangles.push_back({ 132, 250, 232, 350, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media first Row
-        UI_rectangles.push_back({ 247, 250, 347, 350, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media first Row
+        // ===== EFFECT PANEL =====
+        UI_rectangles.push_back({ "Effect background", 1640,110,1840,710, D2D1::ColorF(0x3F3443) });
 
-        UI_rectangles.push_back({ 132, 400, 232, 500, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media second Row
-        UI_rectangles.push_back({ 247, 400, 347, 500, D2D1::ColorF(D2D1::ColorF::LimeGreen) }); // Media second Row
+        UI_rectangles.push_back({ "Right Icon 1", 1855,110,1905,160, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Right Icon 2", 1855,210,1905,260, D2D1::ColorF(D2D1::ColorF::White) });
+        UI_rectangles.push_back({ "Right Icon 3", 1855,310,1905,360, D2D1::ColorF(D2D1::ColorF::White) });
 
+        UI_rectangles.push_back({ "Left effect video Placeholder row 1", 1640,125,1740,225, D2D1::ColorF(0x2F2433) });
+        UI_rectangles.push_back({ "Right effect video Placeholder row 1", 1740,125,1840,225, D2D1::ColorF(0x2F2433) });
 
+        UI_rectangles.push_back({ "Effect video Placeholder row 2", 1640,235,1740,335, D2D1::ColorF(0x2F2433) });
+        UI_rectangles.push_back({ "Right effect video Placeholder row 2", 1740,235,1840,335, D2D1::ColorF(0x2F2433) });
 
-
-        rectangles.push_back({ 800, 100, 1000, 300, D2D1::ColorF(D2D1::ColorF::Red) });
-        rectangles.push_back({ 100, 100, 300, 300, D2D1::ColorF(D2D1::ColorF::DeepSkyBlue) });
-
+        UI_rectangles.push_back({ "Left effect video Placeholder row 3", 1640,345,1740,445, D2D1::ColorF(0x2F2433) });
+        UI_rectangles.push_back({ "Right effect video Placeholder row 3", 1740,345,1840,445, D2D1::ColorF(0x2F2433) });
     }
     break;
     case WM_LBUTTONDOWN:
